@@ -1,0 +1,1350 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Hook Intelligence — BLOND:ISH</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Syne:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#07070d;--s1:#0d0d18;--s2:#131320;--s3:#191928;
+  --border:rgba(255,255,255,0.06);--border2:rgba(255,255,255,0.12);
+  --text:#e2e2ee;--muted:#5c5c78;--dim:#2a2a40;
+  --hero:#ff4d4d;--rebel:#ff8c00;--magic:#a78bfa;--mktg:#00d9a3;
+  --hero-d:rgba(255,77,77,0.08);--rebel-d:rgba(255,140,0,0.08);
+  --magic-d:rgba(167,139,250,0.08);--mktg-d:rgba(0,217,163,0.08);
+  --display:'Bebas Neue',sans-serif;--body:'Syne',sans-serif;--mono:'JetBrains Mono',monospace;
+}
+body{background:var(--bg);color:var(--text);font-family:var(--body);min-height:100vh;overflow:hidden}
+
+/* NAV */
+nav{height:54px;background:var(--s1);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 18px;gap:12px;position:relative;z-index:10}
+.brand{font-family:var(--display);font-size:21px;letter-spacing:0.08em;color:var(--text);margin-right:8px}
+.brand em{color:var(--hero);font-style:normal}
+.stream-toggle{display:flex;gap:2px;background:var(--s2);border:1px solid var(--border2);border-radius:6px;padding:3px}
+.stream-btn{padding:5px 13px;border-radius:4px;border:none;font-family:var(--mono);font-size:10px;letter-spacing:0.08em;cursor:pointer;transition:all 0.18s;color:var(--muted);background:transparent;display:flex;align-items:center;gap:5px;white-space:nowrap}
+.stream-btn.dj-on{background:var(--hero-d);color:var(--hero);border:1px solid rgba(255,77,77,0.25)}
+.stream-btn.mkt-on{background:var(--mktg-d);color:var(--mktg);border:1px solid rgba(0,217,163,0.25)}
+.arch-pills{display:flex;gap:4px}
+.arch-pip{font-family:var(--mono);font-size:9px;padding:3px 7px;border-radius:3px;letter-spacing:0.06em}
+.ap-hero{background:var(--hero-d);color:var(--hero);border:1px solid rgba(255,77,77,0.2)}
+.ap-rebel{background:var(--rebel-d);color:var(--rebel);border:1px solid rgba(255,140,0,0.2)}
+.ap-magic{background:var(--magic-d);color:var(--magic);border:1px solid rgba(167,139,250,0.2)}
+.nav-right{margin-left:auto;display:flex;align-items:center;gap:7px}
+.api-input{background:var(--s2);border:1px solid var(--border2);color:var(--text);padding:5px 10px;border-radius:4px;font-family:var(--mono);font-size:10px;width:185px;letter-spacing:0.04em;transition:border-color 0.2s}
+.api-input::placeholder{color:var(--muted)}
+.api-input:focus{outline:none;border-color:rgba(0,217,163,0.5)}
+.api-input.ok{border-color:rgba(0,217,163,0.6);color:var(--mktg)}
+.api-save{background:var(--s3);border:1px solid var(--border2);color:var(--muted);padding:5px 9px;border-radius:4px;font-family:var(--mono);font-size:9px;cursor:pointer;transition:all 0.15s;letter-spacing:0.06em}
+.api-save:hover{border-color:var(--mktg);color:var(--mktg)}
+.status-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0;transition:all 0.3s}
+.status-txt{font-family:var(--mono);font-size:9px;color:var(--muted);transition:color 0.3s}
+
+/* LAYOUT */
+.workspace{display:grid;grid-template-columns:255px 1fr 360px;height:calc(100vh - 54px);overflow:hidden}
+
+/* SIDEBAR */
+.sidebar{background:var(--s1);border-right:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden}
+.sb-tabs{display:flex;border-bottom:1px solid var(--border)}
+.sb-tab{flex:1;padding:10px 6px;text-align:center;font-family:var(--mono);font-size:9px;letter-spacing:0.1em;text-transform:uppercase;cursor:pointer;color:var(--muted);border-bottom:2px solid transparent;transition:all 0.15s}
+.sb-tab.dj-a{color:var(--hero);border-bottom-color:var(--hero)}
+.sb-tab.mkt-a{color:var(--mktg);border-bottom-color:var(--mktg)}
+.sb-body{flex:1;overflow-y:auto;display:flex;flex-direction:column}
+.sb-body::-webkit-scrollbar{width:2px}
+.sb-body::-webkit-scrollbar-thumb{background:var(--dim)}
+.list-hdr{padding:10px 13px 8px;font-family:var(--mono);font-size:9px;letter-spacing:0.12em;text-transform:uppercase;color:var(--dim);display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;background:var(--s1);z-index:2;border-bottom:1px solid var(--border)}
+.add-btn{width:18px;height:18px;border-radius:3px;border:none;cursor:pointer;font-size:13px;display:flex;align-items:center;justify-content:center;transition:opacity 0.2s}
+.add-dj-btn{background:var(--hero-d);color:var(--hero);border:1px solid rgba(255,77,77,0.25)}
+.add-mkt-btn{background:var(--mktg-d);color:var(--mktg);border:1px solid rgba(0,217,163,0.25)}
+.add-btn:hover{opacity:0.7}
+.add-form{display:none;flex-direction:column;gap:6px;padding:10px 12px;border-bottom:1px solid var(--border);background:var(--s2)}
+.add-form.open{display:flex}
+.add-form input,.add-form select{background:var(--s3);border:1px solid var(--border2);color:var(--text);padding:6px 9px;border-radius:4px;font-family:var(--body);font-size:12px;width:100%}
+.add-form input::placeholder{color:var(--muted)}
+.add-form select option{background:var(--s3)}
+.form-go{border:none;padding:7px;border-radius:4px;font-family:var(--mono);font-size:10px;letter-spacing:0.08em;cursor:pointer;transition:opacity 0.2s}
+.form-go:hover{opacity:0.8}
+.fg-dj{background:var(--hero);color:#000}
+.fg-mkt{background:var(--mktg);color:#000}
+.creator-row{display:flex;align-items:center;gap:8px;padding:9px 12px;border-bottom:1px solid var(--border);cursor:pointer;transition:background 0.12s;position:relative}
+.creator-row:hover,.creator-row.active{background:var(--s2)}
+.creator-row.active::before{content:'';position:absolute;left:0;top:0;bottom:0;width:2px}
+.dj-row.active::before{background:var(--hero)}
+.mkt-row.active::before{background:var(--mktg)}
+.av{width:32px;height:32px;border-radius:7px;display:flex;align-items:center;justify-content:center;font-family:var(--display);font-size:13px;flex-shrink:0}
+.av-hero{background:var(--hero-d);color:var(--hero);border:1px solid rgba(255,77,77,0.2)}
+.av-rebel{background:var(--rebel-d);color:var(--rebel);border:1px solid rgba(255,140,0,0.2)}
+.av-magic{background:var(--magic-d);color:var(--magic);border:1px solid rgba(167,139,250,0.2)}
+.av-mkt{background:var(--mktg-d);color:var(--mktg);border:1px solid rgba(0,217,163,0.2)}
+.cr-info{flex:1;min-width:0}
+.cr-name{font-size:12px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.cr-meta{font-family:var(--mono);font-size:9px;color:var(--muted);margin-top:1px}
+.cr-actions{display:flex;gap:2px;opacity:0;transition:opacity 0.15s;flex-shrink:0}
+.creator-row:hover .cr-actions{opacity:1}
+.cr-edit,.cr-del{width:18px;height:18px;border-radius:3px;border:none;cursor:pointer;font-size:9px;display:flex;align-items:center;justify-content:center;transition:all 0.15s}
+.cr-edit{background:var(--s3);color:var(--muted)}
+.cr-edit:hover{color:var(--text)}
+.cr-del{background:rgba(255,77,77,0.1);color:var(--hero)}
+.cr-del:hover{background:rgba(255,77,77,0.22)}
+.arch-tag{font-family:var(--mono);font-size:8px;padding:2px 5px;border-radius:2px;text-transform:uppercase;letter-spacing:0.06em;flex-shrink:0}
+.at-hero{background:var(--hero-d);color:var(--hero)}
+.at-rebel{background:var(--rebel-d);color:var(--rebel)}
+.at-magic{background:var(--magic-d);color:var(--magic)}
+.at-mkt{background:var(--mktg-d);color:var(--mktg)}
+.scan-sm{background:none;border:1px solid var(--border2);color:var(--muted);padding:3px 6px;border-radius:3px;font-family:var(--mono);font-size:8px;cursor:pointer;letter-spacing:0.06em;transition:all 0.15s;white-space:nowrap;flex-shrink:0}
+.dj-scan:hover{color:var(--hero);border-color:var(--hero)}
+.mkt-scan:hover{color:var(--mktg);border-color:var(--mktg)}
+.scan-sm.spinning{animation:blink 0.7s infinite}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:0.35}}
+.edit-inline{display:none;flex-direction:column;gap:5px;padding:8px 10px;margin:0 10px 6px;background:var(--s2);border:1px solid var(--border2);border-radius:5px}
+.edit-inline.open{display:flex}
+.edit-inline input,.edit-inline select{background:var(--s3);border:1px solid var(--border);color:var(--text);padding:5px 8px;border-radius:3px;font-family:var(--body);font-size:11px;width:100%}
+.edit-btns{display:flex;gap:5px}
+.e-save{background:var(--hero);border:none;color:#000;padding:5px 10px;border-radius:3px;font-family:var(--mono);font-size:9px;cursor:pointer;flex:1;letter-spacing:0.06em}
+.e-cancel{background:var(--s3);border:1px solid var(--border);color:var(--muted);padding:5px 10px;border-radius:3px;font-family:var(--mono);font-size:9px;cursor:pointer;flex:1}
+.arch-legend{padding:12px 13px;border-top:1px solid var(--border);margin-top:auto}
+.al-title{font-family:var(--mono);font-size:8px;color:var(--dim);letter-spacing:0.12em;text-transform:uppercase;margin-bottom:8px}
+.al-row{display:flex;align-items:flex-start;gap:7px;margin-bottom:5px}
+.al-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0;margin-top:3px}
+.al-txt{font-size:10px;color:var(--muted);line-height:1.4}
+.al-txt strong{font-weight:600}
+
+/* FEED */
+.feed{background:var(--bg);overflow-y:auto;display:flex;flex-direction:column}
+.feed::-webkit-scrollbar{width:2px}
+.feed::-webkit-scrollbar-thumb{background:var(--dim)}
+.feed-head{position:sticky;top:0;background:rgba(7,7,13,0.97);backdrop-filter:blur(10px);border-bottom:1px solid var(--border);z-index:5;padding:13px 18px 0}
+.fh-top{display:flex;align-items:baseline;gap:9px;margin-bottom:10px}
+.feed-title{font-family:var(--display);font-size:25px;letter-spacing:0.04em;line-height:1}
+.feed-count{font-family:var(--mono);font-size:9px;color:var(--muted)}
+.scan-all-btn{margin-left:auto;border:none;padding:6px 13px;border-radius:4px;font-family:var(--mono);font-size:9px;letter-spacing:0.08em;cursor:pointer;transition:opacity 0.2s;font-weight:500;flex-shrink:0}
+.scan-all-btn:hover{opacity:0.8}
+.scan-all-btn:disabled{opacity:0.35;cursor:not-allowed}
+.sa-dj{background:var(--hero);color:#000}
+.sa-mkt{background:var(--mktg);color:#000}
+.filters{display:flex;gap:4px;overflow-x:auto;padding-bottom:11px}
+.filters::-webkit-scrollbar{display:none}
+.chip{background:var(--s1);border:1px solid var(--border);color:var(--muted);padding:4px 10px;border-radius:20px;font-family:var(--mono);font-size:9px;letter-spacing:0.06em;cursor:pointer;white-space:nowrap;transition:all 0.12s;text-transform:uppercase}
+.chip:hover{color:var(--text);border-color:var(--border2)}
+.chip.f-hero{background:var(--hero-d);border-color:rgba(255,77,77,0.3);color:var(--hero)}
+.chip.f-rebel{background:var(--rebel-d);border-color:rgba(255,140,0,0.3);color:var(--rebel)}
+.chip.f-base{background:var(--s2);border-color:var(--border2);color:var(--text)}
+.chip.f-mkt{background:var(--mktg-d);border-color:rgba(0,217,163,0.3);color:var(--mktg)}
+.prog-rail{height:2px;background:var(--s2);display:none;overflow:hidden}
+.prog-rail.show{display:block}
+.prog-fill{height:100%;width:0%;transition:width 0.25s}
+.pf-dj{background:linear-gradient(90deg,var(--hero),var(--rebel))}
+.pf-mkt{background:linear-gradient(90deg,var(--mktg),#00a3ff)}
+.posts{padding:12px 16px;display:flex;flex-direction:column;gap:9px}
+.empty-state{display:flex;flex-direction:column;align-items:center;justify-content:center;height:280px;gap:12px}
+.es-glyph{font-family:var(--display);font-size:54px;color:var(--dim);line-height:1}
+.es-msg{font-size:11px;color:var(--muted);text-align:center;max-width:180px;line-height:1.5;font-family:var(--mono)}
+
+/* POST CARDS */
+.post-card{background:var(--s1);border:1px solid var(--border);border-radius:9px;overflow:hidden;cursor:pointer;transition:border-color 0.12s,transform 0.1s,box-shadow 0.15s}
+.post-card:hover{border-color:var(--border2);transform:translateY(-1px);box-shadow:0 6px 20px rgba(0,0,0,0.5)}
+.post-card.sel-dj{border-color:var(--hero);box-shadow:0 0 0 1px rgba(255,77,77,0.12),0 6px 24px rgba(255,77,77,0.08)}
+.post-card.sel-mkt{border-color:var(--mktg);box-shadow:0 0 0 1px rgba(0,217,163,0.12),0 6px 24px rgba(0,217,163,0.08)}
+.card-top{display:flex;align-items:center;gap:7px;padding:10px 13px 0}
+.plat{font-family:var(--mono);font-size:8px;letter-spacing:0.1em;padding:2px 6px;border-radius:2px;text-transform:uppercase}
+.p-tt{background:rgba(255,45,120,0.1);color:#ff2d78;border:1px solid rgba(255,45,120,0.2)}
+.p-ig{background:rgba(130,80,255,0.1);color:#8250ff;border:1px solid rgba(130,80,255,0.2)}
+.p-yt{background:rgba(255,50,50,0.1);color:#ff3232;border:1px solid rgba(255,50,50,0.2)}
+.card-handle{font-size:10px;color:var(--muted);font-family:var(--mono)}
+.card-views{margin-left:auto;font-family:var(--mono);font-size:10px}
+.views-dj{color:var(--rebel)}
+.views-mkt{color:var(--mktg)}
+.hook-bar{margin:8px 13px;padding:9px 12px;border-radius:0 6px 6px 0;border-left:2px solid;display:flex;align-items:flex-start;justify-content:space-between;gap:8px}
+.hb-hero{border-color:var(--hero);background:var(--hero-d)}
+.hb-rebel{border-color:var(--rebel);background:var(--rebel-d)}
+.hb-magic{border-color:var(--magic);background:var(--magic-d)}
+.hb-mkt{border-color:var(--mktg);background:var(--mktg-d)}
+.hook-text{font-size:13px;font-weight:600;line-height:1.5;flex:1;color:var(--text)}
+.card-body{padding:0 13px 9px;font-size:11px;color:var(--muted);line-height:1.6}
+.card-idea{padding:0 13px 9px;font-size:10px;color:var(--mktg);line-height:1.5;border-top:1px solid var(--border);padding-top:7px;margin-top:-2px}
+.card-tags{padding:0 13px 9px;display:flex;flex-wrap:wrap;gap:3px}
+.ctag{font-family:var(--mono);font-size:8px;padding:2px 6px;border-radius:2px;background:var(--s2);color:var(--dim);border:1px solid var(--border);text-transform:uppercase;letter-spacing:0.05em}
+.ct-hero{background:var(--hero-d);color:var(--hero);border-color:rgba(255,77,77,0.15)}
+.ct-rebel{background:var(--rebel-d);color:var(--rebel);border-color:rgba(255,140,0,0.15)}
+.ct-magic{background:var(--magic-d);color:var(--magic);border-color:rgba(167,139,250,0.15)}
+.ct-mkt{background:var(--mktg-d);color:var(--mktg);border-color:rgba(0,217,163,0.15)}
+.ct-vis{background:rgba(255,45,120,0.08);color:#ff2d78;border-color:rgba(255,45,120,0.18)}
+.card-foot{padding:7px 13px;border-top:1px solid var(--border);display:flex;align-items:center;gap:8px}
+.cstat{font-family:var(--mono);font-size:9px;color:var(--muted)}
+.cscore{font-family:var(--mono);font-size:9px}
+.score-dj{color:var(--hero)}
+.score-mkt{color:var(--mktg)}
+.analyze-cta{margin-left:auto;padding:3px 9px;border-radius:3px;font-family:var(--mono);font-size:9px;letter-spacing:0.06em;cursor:pointer;transition:all 0.12s;border:1px solid}
+.ac-dj{color:var(--hero);border-color:rgba(255,77,77,0.25);background:var(--hero-d)}
+.ac-dj:hover{background:rgba(255,77,77,0.15)}
+.ac-mkt{color:var(--mktg);border-color:rgba(0,217,163,0.25);background:var(--mktg-d)}
+.ac-mkt:hover{background:rgba(0,217,163,0.15)}
+
+/* COPY BUTTON */
+.copy-btn{display:inline-flex;align-items:center;gap:3px;background:none;border:1px solid var(--border2);color:var(--muted);padding:2px 7px;border-radius:3px;font-family:var(--mono);font-size:8px;letter-spacing:0.08em;cursor:pointer;transition:all 0.15s;flex-shrink:0;white-space:nowrap}
+.copy-btn:hover{color:var(--text);border-color:var(--text)}
+.copy-btn.dj-c:hover{color:var(--hero);border-color:var(--hero)}
+.copy-btn.mkt-c:hover{color:var(--mktg);border-color:var(--mktg)}
+.copy-btn.done{color:var(--mktg);border-color:var(--mktg)}
+
+/* AGENT PANEL */
+.agent{background:var(--s1);border-left:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden}
+.agent-tabs{display:flex;border-bottom:1px solid var(--border)}
+.atab{flex:1;padding:11px 4px;text-align:center;font-family:var(--mono);font-size:8px;letter-spacing:0.1em;text-transform:uppercase;cursor:pointer;color:var(--muted);border-bottom:2px solid transparent;transition:all 0.15s}
+.atab.at-dj{color:var(--hero);border-bottom-color:var(--hero)}
+.atab.at-mkt{color:var(--mktg);border-bottom-color:var(--mktg)}
+.abody{flex:1;overflow-y:auto;padding:14px}
+.abody::-webkit-scrollbar{width:2px}
+.abody::-webkit-scrollbar-thumb{background:var(--dim)}
+
+/* ANALYSIS */
+.no-sel{display:flex;flex-direction:column;align-items:center;justify-content:center;height:220px;gap:10px;text-align:center}
+.ns-glyph{font-family:var(--display);font-size:42px;color:var(--dim);line-height:1}
+.ns-txt{font-family:var(--mono);font-size:9px;color:var(--muted);line-height:1.6}
+.ablock{background:var(--s2);border:1px solid var(--border);border-radius:7px;padding:12px;margin-bottom:9px}
+.ablock.hero-b{border-color:rgba(255,77,77,0.2);background:rgba(255,77,77,0.04)}
+.ablock.rebel-b{border-color:rgba(255,140,0,0.2);background:rgba(255,140,0,0.04)}
+.ablock.magic-b{border-color:rgba(167,139,250,0.2);background:rgba(167,139,250,0.04)}
+.ablock.mkt-b{border-color:rgba(0,217,163,0.2);background:rgba(0,217,163,0.04)}
+.alabel{font-family:var(--mono);font-size:8px;letter-spacing:0.12em;text-transform:uppercase;margin-bottom:7px}
+.al-hero{color:var(--hero)}.al-rebel{color:var(--rebel)}.al-magic{color:var(--magic)}.al-mkt{color:var(--mktg)}.al-base{color:var(--muted)}
+.atext{font-size:11px;line-height:1.65;color:var(--text)}
+.score-line{display:flex;align-items:center;gap:7px;margin-bottom:6px}
+.score-name{font-family:var(--mono);font-size:9px;color:var(--muted);flex:1}
+.sbar{width:65px;height:3px;background:var(--s3);border-radius:2px;overflow:hidden}
+.sfill{height:100%;border-radius:2px;transition:width 0.7s ease}
+.snum{font-family:var(--mono);font-size:9px;width:22px;text-align:right}
+.adapt-row{display:flex;align-items:flex-start;gap:6px;margin-bottom:5px}
+.adapt-text{flex:1;font-size:11px;line-height:1.5;background:var(--bg);border:1px solid var(--border);border-radius:5px;padding:9px 10px;color:var(--text)}
+.save-btn{width:100%;padding:9px;border-radius:6px;border:1px solid;font-family:var(--mono);font-size:9px;letter-spacing:0.1em;cursor:pointer;transition:all 0.2s;margin-top:4px}
+.save-dj-btn{border-color:rgba(255,77,77,0.25);color:var(--hero);background:var(--hero-d)}
+.save-dj-btn:hover{background:rgba(255,77,77,0.14)}
+.save-mkt-btn{border-color:rgba(0,217,163,0.25);color:var(--mktg);background:var(--mktg-d)}
+.save-mkt-btn:hover{background:rgba(0,217,163,0.14)}
+
+/* THINKING ANIMATION */
+.thinking{display:flex;align-items:center;gap:7px;padding:6px 0;font-family:var(--mono);font-size:9px}
+.t-dj{color:var(--hero)}.t-mkt{color:var(--mktg)}
+.dots span{display:inline-block;width:3px;height:3px;border-radius:50%;animation:dot 1.2s infinite}
+.dots span:nth-child(2){animation-delay:.2s}.dots span:nth-child(3){animation-delay:.4s}
+@keyframes dot{0%,80%,100%{transform:scale(0.5);opacity:0.3}40%{transform:scale(1);opacity:1}}
+.d-dj span{background:var(--hero)}.d-mkt span{background:var(--mktg)}
+.stream-out{font-size:11px;line-height:1.8;color:var(--text);white-space:pre-wrap;font-family:var(--body)}
+
+/* LIBRARY */
+.lib-tabs{display:flex;gap:4px;margin-bottom:11px}
+.lib-tab{padding:4px 10px;border-radius:3px;font-family:var(--mono);font-size:9px;letter-spacing:0.06em;text-transform:uppercase;cursor:pointer;border:1px solid var(--border);color:var(--muted);transition:all 0.12s}
+.lib-tab.lt-dj{background:var(--hero-d);border-color:rgba(255,77,77,0.25);color:var(--hero)}
+.lib-tab.lt-mkt{background:var(--mktg-d);border-color:rgba(0,217,163,0.25);color:var(--mktg)}
+.lib-item{background:var(--s2);border:1px solid var(--border);border-radius:6px;padding:10px 11px;margin-bottom:6px}
+.li-row{display:flex;align-items:flex-start;gap:6px;margin-bottom:4px}
+.li-text{flex:1;font-size:11px;line-height:1.5;color:var(--text)}
+.li-meta{display:flex;gap:5px;align-items:center;flex-wrap:wrap}
+.li-score{font-family:var(--mono);font-size:8px}
+.li-src{font-family:var(--mono);font-size:8px;color:var(--muted)}
+
+/* SETTINGS */
+.sg{margin-bottom:13px}
+.sg-title{font-family:var(--mono);font-size:8px;letter-spacing:0.12em;text-transform:uppercase;color:var(--muted);margin-bottom:7px}
+.pills{display:flex;flex-wrap:wrap;gap:4px}
+.pill{background:var(--bg);border:1px solid var(--border);color:var(--muted);padding:4px 9px;border-radius:20px;font-family:var(--mono);font-size:9px;cursor:pointer;transition:all 0.12s;text-transform:uppercase;letter-spacing:0.04em}
+.pill:hover{color:var(--text);border-color:var(--border2)}
+.pill.on-hero{background:var(--hero-d);border-color:rgba(255,77,77,0.3);color:var(--hero)}
+.pill.on-rebel{background:var(--rebel-d);border-color:rgba(255,140,0,0.3);color:var(--rebel)}
+.pill.on-mkt{background:var(--mktg-d);border-color:rgba(0,217,163,0.3);color:var(--mktg)}
+.run-btn{width:100%;padding:12px;border-radius:7px;border:none;font-family:var(--display);font-size:17px;letter-spacing:0.06em;cursor:pointer;transition:opacity 0.2s;margin-bottom:12px;display:flex;align-items:center;justify-content:center;gap:8px}
+.run-btn:hover{opacity:0.85}
+.run-btn:disabled{opacity:0.35;cursor:not-allowed}
+.rb-dj{background:linear-gradient(135deg,var(--hero),var(--rebel));color:#000}
+.rb-mkt{background:var(--mktg);color:#000}
+.scan-output{display:none}
+.scan-output.open{display:block}
+.output-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:7px}
+
+/* ERROR STATE */
+.error-box{background:rgba(255,77,77,0.06);border:1px solid rgba(255,77,77,0.2);border-radius:7px;padding:12px;margin-bottom:9px;font-size:11px;color:var(--hero);line-height:1.6;font-family:var(--mono)}
+
+/* TOAST */
+.toast{position:fixed;bottom:18px;left:50%;transform:translateX(-50%);padding:7px 18px;border-radius:20px;font-family:var(--mono);font-size:10px;opacity:0;transition:opacity 0.3s;pointer-events:none;z-index:999;letter-spacing:0.06em}
+.toast.show-dj{opacity:1;background:var(--hero);color:#000}
+.toast.show-mkt{opacity:1;background:var(--mktg);color:#000}
+::-webkit-scrollbar{width:3px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:var(--border2);border-radius:2px}
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="brand">HOOK<em>INTEL</em></div>
+  <div class="stream-toggle">
+    <button class="stream-btn dj-on" id="btnDJ" onclick="setStream('dj')">⚔ DJ STREAM</button>
+    <button class="stream-btn" id="btnMKT" onclick="setStream('mkt')">◈ MARKETING</button>
+  </div>
+  <div class="arch-pills">
+    <span class="arch-pip ap-hero">HERO</span>
+    <span class="arch-pip ap-rebel">REBEL</span>
+    <span class="arch-pip ap-magic">MAGIC</span>
+  </div>
+  <div class="nav-right">
+    <input class="api-input" id="apiKeyInput" type="password" placeholder="sk-ant-... paste key here" style="width:210px" />
+    <button class="api-save" id="apiSaveBtn" onclick="saveApiKey()">SAVE</button>
+    <div id="apiDot" style="width:8px;height:8px;border-radius:50%;background:var(--dim);flex-shrink:0"></div>
+    <span id="apiLabel" style="font-family:var(--mono);font-size:9px;color:var(--muted)">NO KEY</span>
+    <span id="syncBadge" style="font-family:var(--mono);font-size:8px;color:var(--dim);letter-spacing:0.08em;display:none">● SHARED</span>
+  </div>
+</nav>
+
+<div class="workspace">
+
+<!-- SIDEBAR -->
+<div class="sidebar">
+  <div class="sb-tabs">
+    <div class="sb-tab dj-a" id="sbDJ" onclick="sbTab('dj')">⚔ DJ Creators</div>
+    <div class="sb-tab" id="sbMKT" onclick="sbTab('mkt')">◈ Mktg Gurus</div>
+  </div>
+
+  <!-- DJ BODY -->
+  <div class="sb-body" id="djBody">
+    <div class="list-hdr">DJ / Artists <button class="add-btn add-dj-btn" onclick="toggleAddForm('dj')">+</button></div>
+    <div class="add-form" id="formDJ">
+      <input id="dj-h" placeholder="@handle" />
+      <select id="dj-p"><option value="tt">TikTok</option><option value="ig">Instagram</option><option value="yt">YouTube</option></select>
+      <select id="dj-a"><option value="hero">Hero</option><option value="rebel">Rebel</option><option value="magic">Magician</option></select>
+      <button class="form-go fg-dj" onclick="addDJ()">ADD CREATOR</button>
+    </div>
+    <div id="djList"></div>
+    <div class="arch-legend" id="djLegend">
+      <div class="al-title">Archetype Key</div>
+      <div class="al-row"><div class="al-dot" style="background:var(--hero)"></div><div class="al-txt"><strong style="color:var(--hero)">Hero</strong> — journey, grind, the win. Crowd moments.</div></div>
+      <div class="al-row"><div class="al-dot" style="background:var(--rebel)"></div><div class="al-txt"><strong style="color:var(--rebel)">Rebel</strong> — anti-mainstream, raw truth, defiance.</div></div>
+      <div class="al-row"><div class="al-dot" style="background:var(--magic)"></div><div class="al-txt"><strong style="color:var(--magic)">Magician</strong> — transforms energy, creates moments.</div></div>
+    </div>
+  </div>
+
+  <!-- MKT BODY -->
+  <div class="sb-body" id="mktBody" style="display:none">
+    <div class="list-hdr">Marketing Gurus <button class="add-btn add-mkt-btn" onclick="toggleAddForm('mkt')">+</button></div>
+    <div class="add-form" id="formMKT">
+      <input id="mkt-h" placeholder="@handle" />
+      <select id="mkt-p"><option value="ig">Instagram</option><option value="tt">TikTok</option><option value="yt">YouTube</option></select>
+      <select id="mkt-t"><option value="hooks">Hook Specialist</option><option value="brand">Brand / Story</option><option value="growth">Growth / Viral</option><option value="copy">Copywriting</option></select>
+      <button class="form-go fg-mkt" onclick="addMKT()">ADD GURU</button>
+    </div>
+    <div id="mktList"></div>
+  </div>
+</div>
+
+<!-- FEED -->
+<div class="feed">
+  <div class="feed-head">
+    <div class="fh-top">
+      <div class="feed-title" id="feedTitle">DJ STREAM</div>
+      <div class="feed-count" id="feedSub">Hero · Rebel · Magician</div>
+      <span id="feedCount" style="font-family:var(--mono);font-size:9px;color:var(--muted)"></span>
+      <button class="scan-all-btn sa-dj" id="scanAllBtn" onclick="scanAll()">⟳ SCAN ALL</button>
+    </div>
+    <div class="filters" id="filterRow"></div>
+    <div class="prog-rail" id="progRail"><div class="prog-fill pf-dj" id="progFill" style="width:0%"></div></div>
+  </div>
+  <div class="posts" id="postList"></div>
+</div>
+
+<!-- AGENT PANEL -->
+<div class="agent">
+  <div class="agent-tabs" id="agentTabs">
+    <div class="atab at-dj" onclick="agentTab('analyze',this)">Analyze</div>
+    <div class="atab" onclick="agentTab('library',this)">Library</div>
+    <div class="atab" onclick="agentTab('settings',this)">Settings</div>
+  </div>
+  <div class="abody">
+    <!-- ANALYZE TAB -->
+    <div id="tab-analyze">
+      <div class="no-sel" id="noSel">
+        <div class="ns-glyph">⬡</div>
+        <div class="ns-txt">Click any post to analyze<br>through your archetype lens</div>
+      </div>
+      <div id="analysisOut" style="display:none"></div>
+    </div>
+    <!-- LIBRARY TAB -->
+    <div id="tab-library" style="display:none">
+      <div class="lib-tabs">
+        <div class="lib-tab lt-dj" id="ltDJ" onclick="libSwitch('dj')">DJ Hooks</div>
+        <div class="lib-tab" id="ltMKT" onclick="libSwitch('mkt')">Mktg Ideas</div>
+      </div>
+      <div id="libDJ"></div>
+      <div id="libMKT" style="display:none"></div>
+    </div>
+    <!-- SETTINGS TAB -->
+    <div id="tab-settings" style="display:none">
+      <div id="set-dj">
+        <div class="sg"><div class="sg-title">Content Pillars</div>
+          <div class="pills" id="djPillars">
+            <div class="pill on-hero" onclick="togglePill(this,'hero')">Live Set</div>
+            <div class="pill on-hero" onclick="togglePill(this,'hero')">Backstage</div>
+            <div class="pill on-rebel" onclick="togglePill(this,'rebel')">Raw / Unfiltered</div>
+            <div class="pill on-hero" onclick="togglePill(this,'hero')">Crowd Reaction</div>
+            <div class="pill on-rebel" onclick="togglePill(this,'rebel')">Anti-Industry</div>
+            <div class="pill on-hero" onclick="togglePill(this,'hero')">Studio Session</div>
+            <div class="pill on-hero" onclick="togglePill(this,'hero')">Day-in-Life</div>
+            <div class="pill on-magic" onclick="togglePill(this,'magic')">ABRACADABRA</div>
+            <div class="pill" onclick="togglePill(this,'rebel')">Bye Bye Plastic</div>
+          </div>
+        </div>
+        <div class="sg"><div class="sg-title">Hook Energy</div>
+          <div class="pills" id="djEnergy">
+            <div class="pill on-hero" onclick="togglePill(this,'hero')">Visual First</div>
+            <div class="pill on-rebel" onclick="togglePill(this,'rebel')">Defiance</div>
+            <div class="pill on-hero" onclick="togglePill(this,'hero')">The Win</div>
+            <div class="pill on-magic" onclick="togglePill(this,'magic')">Cinematic Open</div>
+            <div class="pill on-rebel" onclick="togglePill(this,'rebel')">Raw Truth</div>
+          </div>
+        </div>
+        <button class="run-btn rb-dj" id="runDJ" onclick="runScan('dj')">⟳ RUN DJ SCAN</button>
+        <div class="scan-output" id="djScanOut">
+          <div class="ablock rebel-b">
+            <div class="output-hdr"><div class="alabel al-rebel" style="margin-bottom:0">Agent Output</div><button class="copy-btn dj-c" onclick="copyBtn(this,document.getElementById('djStreamTxt').textContent)">COPY ALL</button></div>
+            <div class="stream-out" id="djStreamTxt"></div>
+          </div>
+        </div>
+      </div>
+      <div id="set-mkt" style="display:none">
+        <div class="sg"><div class="sg-title">Marketing Focus</div>
+          <div class="pills" id="mktFocus">
+            <div class="pill on-mkt" onclick="toggleMktPill(this)">Hook Frameworks</div>
+            <div class="pill on-mkt" onclick="toggleMktPill(this)">Caption Formulas</div>
+            <div class="pill on-mkt" onclick="toggleMktPill(this)">Viral Triggers</div>
+            <div class="pill" onclick="toggleMktPill(this)">CTA Strategy</div>
+            <div class="pill on-mkt" onclick="toggleMktPill(this)">Audience Psychology</div>
+          </div>
+        </div>
+        <button class="run-btn rb-mkt" id="runMKT" onclick="runScan('mkt')">⟳ RUN MARKETING SCAN</button>
+        <div class="scan-output" id="mktScanOut">
+          <div class="ablock mkt-b">
+            <div class="output-hdr"><div class="alabel al-mkt" style="margin-bottom:0">Agent Output</div><button class="copy-btn mkt-c" onclick="copyBtn(this,document.getElementById('mktStreamTxt').textContent)">COPY ALL</button></div>
+            <div class="stream-out" id="mktStreamTxt"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+</div><!-- end workspace -->
+<div class="toast" id="toast"></div>
+
+<script>
+// ═══════════════════════════════════════════════
+// DATA
+// ═══════════════════════════════════════════════
+const DJ_POSTS = [
+  {id:1,stream:'dj',platform:'tt',creator:'@marshmello',views:'8.2M',likes:'640K',shares:'89K',
+   hook:'[ 4 seconds: strobe lights, empty stage, total silence ]',
+   body:'Then the drop hits. First 4s: zero text, zero face. Pure anticipation. 97% 3-second watch rate.',
+   tags:['visual-first','cinematic','stage'],arch:'magic',visual:true,score:98,category:'stage'},
+  {id:2,stream:'dj',platform:'ig',creator:'@tiesto',views:'4.1M',likes:'310K',shares:'41K',
+   hook:'Nobody sees this part.',
+   body:'Opens: hands shaking backstage before 80,000 people. Vulnerability IS the hook. Hero energy.',
+   tags:['hero-journey','backstage','raw'],arch:'hero',visual:true,score:96,category:'backstage'},
+  {id:3,stream:'dj',platform:'tt',creator:'@davidguetta',views:'12.4M',likes:'1.2M',shares:'220K',
+   hook:'[ Slow-mo: single lighter held up in 100k crowd — 5 seconds, no text ]',
+   body:'"This is why I do it." Zero narration. Magician creating a shared moment.',
+   tags:['visual-first','crowd','hero-moment'],arch:'magic',visual:true,score:99,category:'crowd'},
+  {id:4,stream:'dj',platform:'ig',creator:'@skrillex',views:'2.8M',likes:'198K',shares:'29K',
+   hook:'I almost quit 3 times before this moment.',
+   body:'Direct to camera, worn studio background. Raw rebel authenticity over polished aesthetic.',
+   tags:['rebel','raw','comeback'],arch:'rebel',visual:false,score:94,category:'rebel'},
+  {id:5,stream:'dj',platform:'tt',creator:'@diplo',views:'6.7M',likes:'521K',shares:'78K',
+   hook:'[ DJ booth setup in empty dark venue — hands only, no face, room ambience ]',
+   body:'Craft made visible before anyone arrives. Privacy + ritual. The viewer sees something they shouldn\'t.',
+   tags:['visual-first','craft','backstage'],arch:'rebel',visual:true,score:95,category:'behind'},
+  {id:6,stream:'dj',platform:'ig',creator:'@deadmau5',views:'3.1M',likes:'220K',shares:'31K',
+   hook:'The industry told me to change my sound. I told them no.',
+   body:'No music under it. Flat tone. The defiance IS the hook. Pure rebel archetype.',
+   tags:['rebel','anti-industry','defiance'],arch:'rebel',visual:false,score:92,category:'rebel'},
+  {id:7,stream:'dj',platform:'tt',creator:'@charlixcx',views:'9.1M',likes:'890K',shares:'145K',
+   hook:'[ Overhead drone: crowd as sea of phone lights, 4 seconds of silence ]',
+   body:'Then voice a cappella. Scale stops the scroll cold. Hero moment — proof of the journey.',
+   tags:['visual-first','scale','hero-moment'],arch:'hero',visual:true,score:97,category:'crowd'},
+  {id:8,stream:'dj',platform:'ig',creator:'@fisher',views:'2.2M',likes:'165K',shares:'22K',
+   hook:'They said underground music was dead. We sold out 3 continents.',
+   body:'Screen recording of sold-out notifications popping. Rebel win. Simple, receipts-based proof.',
+   tags:['rebel','proof','underground'],arch:'rebel',visual:false,score:90,category:'rebel'},
+];
+
+const MKT_POSTS = [
+  {id:101,stream:'mkt',platform:'tt',creator:'@garyvee',views:'2.4M',likes:'180K',shares:'31K',
+   hook:'Nobody is going to tell you this about social media in 2025...',
+   body:'Curiosity gap + authority signal. "Nobody will tell you" creates urgency and positions speaker as insider.',
+   tags:['curiosity-gap','authority','insider'],arch:'mkt',visual:false,score:94,category:'hooks',
+   transcript:'Optimize for saves, not likes. Saves = algorithm signal. Saves = intent. Saves = future buyer.',
+   idea:'Apply: "Nobody tells you this about getting booked at festivals..."'},
+  {id:102,stream:'mkt',platform:'ig',creator:'@alexhormozi',views:'3.8M',likes:'290K',shares:'44K',
+   hook:'[ Opens on whiteboard mid-sentence — no intro, no music, already teaching ]',
+   body:'Zero warm-up. Drop the viewer into value at frame 1. Retention spikes because they\'re already behind.',
+   tags:['visual-first','value-first','no-intro'],arch:'mkt',visual:true,score:97,category:'hooks',
+   transcript:'The $100M offer framework: make the value so high that saying no feels stupid.',
+   idea:'Apply: Start mid-set clip already at peak energy. No build-up shown.'},
+  {id:103,stream:'mkt',platform:'yt',creator:'@mrBeast',views:'48M',likes:'3.2M',shares:'890K',
+   hook:'[ Extreme close-up: cash on table — zero context — then face ]',
+   body:'Pure visual shock before any verbal hook. Brain processes image before it can decide to scroll.',
+   tags:['visual-shock','pattern-interrupt','no-context'],arch:'mkt',visual:true,score:99,category:'viral',
+   transcript:'The thumbnail is the ad for the video. The first frame is the thumbnail in motion.',
+   idea:'Apply: First frame = crowd hands up or strobe flash. No context. Force the brain to ask "where is this?"'},
+  {id:104,stream:'mkt',platform:'ig',creator:'@diary_of_a_ceo',views:'1.1M',likes:'88K',shares:'12K',
+   hook:'The $0 marketing strategy that built an 8-figure brand.',
+   body:'Bold claim + proof of outcome. The number anchors credibility instantly.',
+   tags:['bold-claim','social-proof','outcome-first'],arch:'mkt',visual:false,score:89,category:'copy',
+   transcript:'Consistency beats quality every time in the first 12 months.',
+   idea:'Apply: "The 0-budget strategy that got me booked in 3 countries."'},
+  {id:105,stream:'mkt',platform:'tt',creator:'@Sabri_Suby',views:'1.6M',likes:'120K',shares:'18K',
+   hook:'Your caption is losing you 60% of your audience. Here\'s why.',
+   body:'Loss aversion hook. "Losing" activates more than "gaining". Immediate stakes.',
+   tags:['loss-aversion','stakes','education'],arch:'mkt',visual:false,score:91,category:'copy',
+   transcript:'Caption formula: Line 1 = hook. Line 2 = stakes. Line 3 = proof. CTA last.',
+   idea:'Apply: "Your set is losing the crowd at minute 3. Here\'s why."'},
+  {id:106,stream:'mkt',platform:'tt',creator:'@jasonlevin',views:'2.1M',likes:'160K',shares:'27K',
+   hook:'[ Text fades in on black screen: "Stop making content." — 3 second pause ]',
+   body:'Pattern interrupt using the medium itself. Cognitive dissonance forces a watch.',
+   tags:['pattern-interrupt','visual-text','paradox'],arch:'mkt',visual:true,score:96,category:'viral',
+   transcript:'Stop making content for the algorithm. Start making content for one specific person.',
+   idea:'Apply: Black screen, slow text: "Stop promoting your gigs." 3s pause. Then: "Start documenting your world."'},
+];
+
+const DEFAULT_DJ = [
+  {handle:'@blondish',platform:'ig',arch:'hero',followers:'500K'},
+  {handle:'@marshmello',platform:'tt',arch:'magic',followers:'42M'},
+  {handle:'@skrillex',platform:'ig',arch:'rebel',followers:'12M'},
+];
+const DEFAULT_MKT = [
+  {handle:'@garyvee',platform:'tt',type:'growth',followers:'11M'},
+  {handle:'@alexhormozi',platform:'ig',type:'brand',followers:'8M'},
+  {handle:'@diary_of_a_ceo',platform:'ig',type:'hooks',followers:'4M'},
+];
+
+// ═══════════════════════════════════════════════
+// STATE
+// ═══════════════════════════════════════════════
+let stream = 'dj';
+let djCreators = [...DEFAULT_DJ];
+let mktCreators = [...DEFAULT_MKT];
+let savedDJ = [], savedMKT = [];
+let selectedPost = null;
+let activeAgentTab = 'analyze';
+let activeFilter = 'all';
+
+// ═══════════════════════════════════════════════
+// API KEY — simple, bulletproof
+// ═══════════════════════════════════════════════
+function getKey(){
+  return localStorage.getItem('hookintel_key') || '';
+}
+
+function saveApiKey(){
+  var btn = document.getElementById('apiSaveBtn');
+  // If showing CHANGE, switch to edit mode
+  if(btn && btn.textContent === 'CHANGE'){
+    setKeyStatus(false);
+    return;
+  }
+  var v = (document.getElementById('apiKeyInput').value || '').trim();
+  if(!v){ showToast('Paste your API key first','dj'); return; }
+  if(v.indexOf('sk-ant-') !== 0){ showToast('Key must start with sk-ant-','dj'); return; }
+  if(v === '••••••••••••••••••••'){ showToast('Already saved — click CHANGE to update','mkt'); return; }
+  localStorage.setItem('hookintel_key', v);
+  setKeyStatus(true);
+  showToast('Key saved permanently','mkt');
+}
+
+function loadKey(){
+  var k = getKey();
+  if(k && k.indexOf('sk-ant-') === 0 && k.length > 20){
+    document.getElementById('apiKeyInput').value = '••••••••••••••••••••';
+    setKeyStatus(true);
+  } else {
+    setKeyStatus(false);
+  }
+}
+
+function setKeyStatus(ok){
+  var dot = document.getElementById('apiDot');
+  var lbl = document.getElementById('apiLabel');
+  var inp = document.getElementById('apiKeyInput');
+  var btn = document.getElementById('apiSaveBtn');
+  if(!dot || !lbl) return;
+  if(ok){
+    dot.style.background = 'var(--mktg)';
+    dot.style.boxShadow = '0 0 7px var(--mktg)';
+    lbl.textContent = 'LIVE';
+    lbl.style.color = 'var(--mktg)';
+    if(btn) btn.textContent = 'CHANGE';
+  } else {
+    dot.style.background = 'var(--dim)';
+    dot.style.boxShadow = 'none';
+    lbl.textContent = 'NO KEY';
+    lbl.style.color = 'var(--muted)';
+    if(btn) btn.textContent = 'SAVE';
+    if(inp) inp.value = '';
+  }
+}
+
+// legacy aliases — nothing breaks
+function showKeyConnected(){ setKeyStatus(true); }
+function showKeyEntry(){ setKeyStatus(false); }
+function showKeyInput(){ setKeyStatus(false); document.getElementById('apiKeyInput').focus(); }
+function updateKeyUI(k){}
+
+
+
+// ── SHARED STORAGE ───────────────────────────────────────────────────────────
+async function storageSave(key, value){
+  try{ await window.storage.set(key, JSON.stringify(value), true); }catch(e){}
+}
+async function storageLoad(key, fallback){
+  try{ const r = await window.storage.get(key, true); return r ? JSON.parse(r.value) : fallback; }catch(e){ return fallback; }
+}
+async function loadSharedData(){
+  djCreators  = await storageLoad('hi_dj_creators',  DEFAULT_DJ.slice());
+  mktCreators = await storageLoad('hi_mkt_creators', DEFAULT_MKT.slice());
+  savedDJ     = await storageLoad('hi_saved_dj',     []);
+  savedMKT    = await storageLoad('hi_saved_mkt',    []);
+  const extraDJ  = await storageLoad('hi_extra_dj',  []);
+  const extraMKT = await storageLoad('hi_extra_mkt', []);
+  const bDJ = new Set([1,2,3,4,5,6,7,8]);
+  const bMKT= new Set([101,102,103,104,105,106]);
+  for(const p of extraDJ)  if(!bDJ.has(p.id)  && !DJ_POSTS.find(x=>x.id===p.id))  DJ_POSTS.unshift(p);
+  for(const p of extraMKT) if(!bMKT.has(p.id) && !MKT_POSTS.find(x=>x.id===p.id)) MKT_POSTS.unshift(p);
+}
+async function saveExtraPosts(){
+  const bDJ = new Set([1,2,3,4,5,6,7,8]);
+  const bMKT= new Set([101,102,103,104,105,106]);
+  await storageSave('hi_extra_dj',  DJ_POSTS.filter( p=>!bDJ.has(p.id)).slice(0,50));
+  await storageSave('hi_extra_mkt', MKT_POSTS.filter(p=>!bMKT.has(p.id)).slice(0,50));
+}
+// ─────────────────────────────────────────────────────────────────────────────
+
+// CLAUDE API CALL — THIS IS THE WORKING FETCH
+// ═══════════════════════════════════════════════
+async function callClaude(systemPrompt, userPrompt, maxTokens = 1000){
+  const key = getKey();
+  if(!key){ throw new Error('NO_KEY'); }
+
+  let resp;
+  try {
+    resp = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': key,
+        'anthropic-version': '2023-06-01',
+        'anthropic-dangerous-direct-browser-access': 'true'
+      },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: maxTokens,
+        system: systemPrompt,
+        messages: [{ role: 'user', content: userPrompt }]
+      })
+    });
+  } catch(networkErr) {
+    throw new Error('Network error — check your internet connection');
+  }
+
+  if(!resp.ok){
+    let errMsg = 'API error ' + resp.status;
+    try {
+      const errBody = await resp.json();
+      errMsg = errBody.error?.message || errMsg;
+      // Surface common errors clearly
+      if(resp.status === 401) errMsg = 'Invalid API key — check your key at console.anthropic.com';
+      if(resp.status === 429) errMsg = 'Rate limited — wait a moment and try again';
+      if(resp.status === 400) errMsg = 'Bad request: ' + (errBody.error?.message || 'unknown');
+    } catch(e) {}
+    throw new Error(errMsg);
+  }
+
+  const data = await resp.json();
+  return data.content?.[0]?.text || '';
+}
+
+// ═══════════════════════════════════════════════
+// STREAM SWITCH
+// ═══════════════════════════════════════════════
+function setStream(s){
+  stream = s;
+  const isDJ = s === 'dj';
+  document.getElementById('btnDJ').className = 'stream-btn ' + (isDJ ? 'dj-on' : '');
+  document.getElementById('btnMKT').className = 'stream-btn ' + (isDJ ? '' : 'mkt-on');
+  document.getElementById('feedTitle').textContent = isDJ ? 'DJ STREAM' : 'MARKETING';
+  document.getElementById('feedSub').textContent = isDJ ? 'Hero · Rebel · Magician' : 'Hooks · Transcripts · Ideas';
+  const saBtn = document.getElementById('scanAllBtn');
+  saBtn.className = 'scan-all-btn ' + (isDJ ? 'sa-dj' : 'sa-mkt');
+  document.getElementById('progFill').className = 'prog-fill ' + (isDJ ? 'pf-dj' : 'pf-mkt');
+  document.getElementById('set-dj').style.display = isDJ ? 'block' : 'none';
+  document.getElementById('set-mkt').style.display = isDJ ? 'none' : 'block';
+  sbTab(s);
+  renderFilters();
+  renderPosts(isDJ ? DJ_POSTS : MKT_POSTS);
+  // sync agent tab highlight
+  document.querySelectorAll('.atab').forEach((t,i) => {
+    t.className = 'atab';
+    if(i === 0) t.classList.add(isDJ ? 'at-dj' : 'at-mkt');
+  });
+}
+
+// ═══════════════════════════════════════════════
+// SIDEBAR TABS
+// ═══════════════════════════════════════════════
+function sbTab(s){
+  const isDJ = s === 'dj';
+  document.getElementById('sbDJ').className = 'sb-tab ' + (isDJ ? 'dj-a' : '');
+  document.getElementById('sbMKT').className = 'sb-tab ' + (isDJ ? '' : 'mkt-a');
+  document.getElementById('djBody').style.display = isDJ ? 'flex' : 'none';
+  document.getElementById('mktBody').style.display = isDJ ? 'none' : 'flex';
+  if(isDJ){ document.getElementById('djBody').style.flexDirection = 'column'; }
+  else { document.getElementById('mktBody').style.flexDirection = 'column'; }
+}
+
+// ═══════════════════════════════════════════════
+// CREATOR MANAGEMENT
+// ═══════════════════════════════════════════════
+function toggleAddForm(t){
+  document.getElementById('formDJ').classList.remove('open');
+  document.getElementById('formMKT').classList.remove('open');
+  document.getElementById(t === 'dj' ? 'formDJ' : 'formMKT').classList.toggle('open');
+}
+function addDJ(){
+  const h = document.getElementById('dj-h').value.trim(); if(!h) return;
+  djCreators.push({ handle: h.startsWith('@') ? h : '@'+h, platform: document.getElementById('dj-p').value, arch: document.getElementById('dj-a').value, followers: '—' });
+  storageSave('hi_dj_creators', djCreators);
+  renderDJList(); document.getElementById('dj-h').value = ''; document.getElementById('formDJ').classList.remove('open');
+  showToast('Creator added — team synced','mkt');
+}
+function addMKT(){
+  const h = document.getElementById('mkt-h').value.trim(); if(!h) return;
+  mktCreators.push({ handle: h.startsWith('@') ? h : '@'+h, platform: document.getElementById('mkt-p').value, type: document.getElementById('mkt-t').value, followers: '—' });
+  storageSave('hi_mkt_creators', mktCreators);
+  renderMKTList(); document.getElementById('mkt-h').value = ''; document.getElementById('formMKT').classList.remove('open');
+  showToast('Guru added — team synced','mkt');
+}
+function deleteDJ(i){ if(confirm('Remove '+djCreators[i].handle+'?')){ djCreators.splice(i,1); storageSave('hi_dj_creators',djCreators); renderDJList(); showToast('Removed — synced','dj'); } }
+function deleteMKT(i){ if(confirm('Remove '+mktCreators[i].handle+'?')){ mktCreators.splice(i,1); storageSave('hi_mkt_creators',mktCreators); renderMKTList(); showToast('Removed — synced','mkt'); } }
+function openEditDJ(i){ closeAllEdits(); document.getElementById('eDJ'+i)?.classList.add('open'); }
+function openEditMKT(i){ closeAllEdits(); document.getElementById('eMKT'+i)?.classList.add('open'); }
+function closeAllEdits(){ document.querySelectorAll('.edit-inline').forEach(e => e.classList.remove('open')); }
+function saveDJEdit(i){
+  djCreators[i].handle = document.getElementById('eDJh'+i).value.trim() || djCreators[i].handle;
+  djCreators[i].platform = document.getElementById('eDJp'+i).value;
+  djCreators[i].arch = document.getElementById('eDJa'+i).value;
+  storageSave('hi_dj_creators',djCreators); renderDJList(); showToast('Updated — synced','dj');
+}
+function saveMKTEdit(i){
+  mktCreators[i].handle = document.getElementById('eMKTh'+i).value.trim() || mktCreators[i].handle;
+  mktCreators[i].platform = document.getElementById('eMKTp'+i).value;
+  mktCreators[i].type = document.getElementById('eMKTt'+i).value;
+  storageSave('hi_mkt_creators',mktCreators); renderMKTList(); showToast('Updated — synced','mkt');
+}
+
+function renderDJList(){
+  document.getElementById('djList').innerHTML = djCreators.map((c,i) => `
+    <div class="creator-row dj-row" onclick="focusDJ(${i})">
+      <div class="av av-${c.arch}">${c.handle.slice(1,3).toUpperCase()}</div>
+      <div class="cr-info"><div class="cr-name">${c.handle}</div><div class="cr-meta">${c.platform.toUpperCase()} · ${c.followers}</div></div>
+      <span class="arch-tag at-${c.arch}">${c.arch}</span>
+      <div class="cr-actions">
+        <button class="cr-edit" onclick="event.stopPropagation();openEditDJ(${i})">✎</button>
+        <button class="cr-del" onclick="event.stopPropagation();deleteDJ(${i})">✕</button>
+      </div>
+      <button class="scan-sm dj-scan" id="dsb${i}" onclick="event.stopPropagation();scanCreator('dj',${i})">SCAN</button>
+    </div>
+    <div class="edit-inline" id="eDJ${i}">
+      <input id="eDJh${i}" value="${c.handle}" />
+      <select id="eDJp${i}"><option value="tt" ${c.platform==='tt'?'selected':''}>TikTok</option><option value="ig" ${c.platform==='ig'?'selected':''}>Instagram</option><option value="yt" ${c.platform==='yt'?'selected':''}>YouTube</option></select>
+      <select id="eDJa${i}"><option value="hero" ${c.arch==='hero'?'selected':''}>Hero</option><option value="rebel" ${c.arch==='rebel'?'selected':''}>Rebel</option><option value="magic" ${c.arch==='magic'?'selected':''}>Magician</option></select>
+      <div class="edit-btns"><button class="e-save" onclick="saveDJEdit(${i})">SAVE</button><button class="e-cancel" onclick="closeAllEdits()">CANCEL</button></div>
+    </div>
+  `).join('');
+}
+
+function renderMKTList(){
+  document.getElementById('mktList').innerHTML = mktCreators.map((c,i) => `
+    <div class="creator-row mkt-row" onclick="focusMKT(${i})">
+      <div class="av av-mkt">${c.handle.slice(1,3).toUpperCase()}</div>
+      <div class="cr-info"><div class="cr-name">${c.handle}</div><div class="cr-meta">${c.platform.toUpperCase()} · ${c.type}</div></div>
+      <span class="arch-tag at-mkt">${c.type.slice(0,5)}</span>
+      <div class="cr-actions">
+        <button class="cr-edit" onclick="event.stopPropagation();openEditMKT(${i})">✎</button>
+        <button class="cr-del" onclick="event.stopPropagation();deleteMKT(${i})">✕</button>
+      </div>
+      <button class="scan-sm mkt-scan" id="msb${i}" onclick="event.stopPropagation();scanCreator('mkt',${i})">SCAN</button>
+    </div>
+    <div class="edit-inline" id="eMKT${i}">
+      <input id="eMKTh${i}" value="${c.handle}" />
+      <select id="eMKTp${i}"><option value="ig" ${c.platform==='ig'?'selected':''}>Instagram</option><option value="tt" ${c.platform==='tt'?'selected':''}>TikTok</option><option value="yt" ${c.platform==='yt'?'selected':''}>YouTube</option></select>
+      <select id="eMKTt${i}"><option value="hooks" ${c.type==='hooks'?'selected':''}>Hook Specialist</option><option value="brand" ${c.type==='brand'?'selected':''}>Brand / Story</option><option value="growth" ${c.type==='growth'?'selected':''}>Growth / Viral</option><option value="copy" ${c.type==='copy'?'selected':''}>Copywriting</option></select>
+      <div class="edit-btns"><button class="e-save" onclick="saveMKTEdit(${i})">SAVE</button><button class="e-cancel" onclick="closeAllEdits()">CANCEL</button></div>
+    </div>
+  `).join('');
+}
+
+function focusDJ(i){
+  document.querySelectorAll('.dj-row').forEach((e,j) => e.classList.toggle('active', j*2===i*2));
+  const filtered = DJ_POSTS.filter(p => p.creator === djCreators[i].handle);
+  renderPosts(filtered.length ? filtered : DJ_POSTS);
+}
+function focusMKT(i){
+  document.querySelectorAll('.mkt-row').forEach((e,j) => e.classList.toggle('active', j*2===i*2));
+  const filtered = MKT_POSTS.filter(p => p.creator === mktCreators[i].handle);
+  renderPosts(filtered.length ? filtered : MKT_POSTS);
+}
+
+async function scanCreator(type, i){
+  const btnId = type === 'dj' ? `dsb${i}` : `msb${i}`;
+  const btn = document.getElementById(btnId);
+  if(!btn) return;
+
+  // Check API key first
+  if(!getKey()){
+    showToast('Add your API key first', 'dj');
+    return;
+  }
+
+  btn.textContent = '...'; btn.classList.add('spinning');
+
+  const isDJ = type === 'dj';
+  const creator = isDJ ? djCreators[i] : mktCreators[i];
+
+  const sys = `You are a social media intelligence agent. Generate realistic, high-quality hook data for a social media creator. Return ONLY valid compact JSON, no markdown.`;
+
+  const prompt = isDJ
+    ? `Generate 3 top-performing social media hooks for ${creator.handle}, a DJ/artist on ${creator.platform} with ${creator.arch} archetype energy.
+
+Return ONLY a JSON array, nothing else before or after it:
+[
+  {"hook":"hook text here","body":"why this hook works and what makes it perform","tags":["tag1","tag2"],"arch":"${creator.arch}","visual":false,"score":94,"views":"3.2M","likes":"220K","shares":"28K","category":"backstage"},
+  {"hook":"second hook here","body":"explanation of technique","tags":["tag1","tag2"],"arch":"${creator.arch}","visual":true,"score":97,"views":"8.1M","likes":"640K","shares":"92K","category":"crowd"},
+  {"hook":"third hook here","body":"explanation","tags":["tag1","tag2"],"arch":"${creator.arch}","visual":false,"score":91,"views":"1.8M","likes":"130K","shares":"17K","category":"rebel"}
+]
+
+Make each hook feel authentic to ${creator.handle}. Visual hooks score higher. Be specific and creative.`
+    : `Generate 3 top-performing social media hooks for ${creator.handle}, a ${creator.type} creator on ${creator.platform}.
+
+Return ONLY a JSON array, nothing else before or after it:
+[
+  {"hook":"hook text here","body":"the marketing technique this uses and why it works","tags":["tag1","tag2"],"visual":false,"score":94,"views":"2.1M","likes":"160K","shares":"22K","category":"hooks","transcript":"key insight this creator type would share","idea":"apply to BLOND:ISH: specific adaptation for a DJ artist brand"},
+  {"hook":"second hook","body":"technique explanation","tags":["tag1","tag2"],"visual":true,"score":97,"views":"5.4M","likes":"410K","shares":"58K","category":"viral","transcript":"insight","idea":"BLOND:ISH adaptation"},
+  {"hook":"third hook","body":"explanation","tags":["tag1","tag2"],"visual":false,"score":89,"views":"1.2M","likes":"88K","shares":"11K","category":"copy","transcript":"insight","idea":"BLOND:ISH adaptation"}
+]
+
+Make each hook feel authentic to ${creator.handle}'s style and niche.`;
+
+  try {
+    const raw = await callClaude(sys, prompt, 800);
+    let posts;
+    try {
+      let clean = raw.replace(/```json|```/g,'').trim();
+      // Find the JSON array — be forgiving about extra text before/after
+      const start = clean.indexOf('[');
+      const end = clean.lastIndexOf(']') + 1;
+      if(start === -1 || end === 0) throw new Error('no_array');
+      const jsonStr = clean.slice(start, end);
+      posts = JSON.parse(jsonStr);
+      if(!Array.isArray(posts) || posts.length === 0) throw new Error('empty_array');
+    } catch(e) {
+      console.error('Parse fail. Raw response was:', raw);
+      throw new Error('parse_fail');
+    }
+
+    // Give each post a unique id, stream tag, platform, creator
+    const baseId = Date.now();
+    const newPosts = posts.map((p, idx) => ({
+      id: baseId + idx,
+      stream: isDJ ? 'dj' : 'mkt',
+      platform: creator.platform,
+      creator: creator.handle,
+      views: p.views || '1.2M',
+      likes: p.likes || '80K',
+      shares: p.shares || '12K',
+      hook: p.hook,
+      body: p.body,
+      tags: p.tags || [],
+      arch: p.arch || (isDJ ? creator.arch : 'mkt'),
+      visual: p.visual || false,
+      score: p.score || 88,
+      category: p.category || 'general',
+      transcript: p.transcript || '',
+      idea: p.idea || ''
+    }));
+
+    // Add to the right pool
+    if(isDJ){
+      DJ_POSTS.unshift(...newPosts);
+    } else {
+      MKT_POSTS.unshift(...newPosts);
+    }
+
+    // Re-render feed with current stream
+    renderPosts(isDJ ? DJ_POSTS : MKT_POSTS);
+    btn.textContent = '✓'; btn.classList.remove('spinning');
+    setTimeout(() => { btn.textContent = 'SCAN'; }, 2500);
+    await saveExtraPosts();
+    showToast(`${newPosts.length} hooks added — team can see them`, isDJ ? 'dj' : 'mkt');
+
+  } catch(err) {
+    btn.textContent = 'SCAN'; btn.classList.remove('spinning');
+    if(err.message === 'NO_KEY'){
+      showToast('Paste your API key first', 'dj');
+    } else if(err.message === 'parse_fail') {
+      showToast('Got response but couldnt parse it — try again', 'dj');
+    } else {
+      // Show the actual error so we know what went wrong
+      showToast(err.message || 'Scan failed', 'dj');
+      console.error('Scan error:', err.message);
+    }
+  }
+}
+
+// ═══════════════════════════════════════════════
+// SCAN ALL — WITH REAL CLAUDE CALL
+// ═══════════════════════════════════════════════
+async function scanAll(){
+  const btn = document.getElementById('scanAllBtn');
+  const rail = document.getElementById('progRail');
+  const fill = document.getElementById('progFill');
+  const isDJ = stream === 'dj';
+
+  if(!getKey()){
+    showToast('Add your API key first','dj');
+    return;
+  }
+
+  btn.disabled = true;
+  rail.classList.add('show');
+  const creators = isDJ ? djCreators : mktCreators;
+  const total = creators.length;
+
+  for(let i = 0; i < total; i++){
+    const pct = Math.round((i / total) * 90);
+    fill.style.width = pct + '%';
+    document.getElementById('feedSub').textContent = `Scanning ${creators[i].handle}...`;
+
+    // Scan each creator silently (reuse scanCreator logic without button)
+    const sys = `You are a social media intelligence agent. Return ONLY valid compact JSON, no markdown.`;
+    const creator = creators[i];
+    const prompt = isDJ
+      ? `Generate 2 top-performing hooks for ${creator.handle} (${creator.platform}, archetype: ${creator.arch}, DJ/artist).
+Return JSON array of 2 posts:
+[{"hook":"hook text","body":"why it works","tags":["t1","t2"],"arch":"${creator.arch}","visual":true,"score":90,"views":"2M","likes":"150K","shares":"20K","category":"crowd"}]`
+      : `Generate 2 top-performing hooks for ${creator.handle} (${creator.platform}, type: ${creator.type}).
+Return JSON array of 2 posts:
+[{"hook":"hook text","body":"marketing technique","tags":["t1","t2"],"visual":false,"score":90,"views":"1M","likes":"80K","shares":"10K","category":"hooks","transcript":"key insight","idea":"apply to BLOND:ISH"}]`;
+
+    try {
+      const raw = await callClaude(sys, prompt, 600);
+      const clean = raw.replace(/```json|```/g,'').trim();
+      const start = clean.indexOf('[');
+      const end = clean.lastIndexOf(']') + 1;
+      const posts = JSON.parse(clean.slice(start, end));
+      const baseId = Date.now() + i * 10;
+      const newPosts = posts.map((p, idx) => ({
+        id: baseId + idx,
+        stream: isDJ ? 'dj' : 'mkt',
+        platform: creator.platform,
+        creator: creator.handle,
+        views: p.views || '1M',
+        likes: p.likes || '70K',
+        shares: p.shares || '10K',
+        hook: p.hook,
+        body: p.body,
+        tags: p.tags || [],
+        arch: p.arch || (isDJ ? creator.arch : 'mkt'),
+        visual: !!p.visual,
+        score: p.score || 87,
+        category: p.category || 'general',
+        transcript: p.transcript || '',
+        idea: p.idea || ''
+      }));
+      if(isDJ) DJ_POSTS.unshift(...newPosts);
+      else MKT_POSTS.unshift(...newPosts);
+    } catch(e) {
+      console.error('Scan failed for', creator.handle, ':', e.message);
+      // continue to next creator
+    }
+
+    await wait(300); // small pause between calls
+  }
+
+  fill.style.width = '100%';
+  document.getElementById('feedSub').textContent = isDJ ? 'Hero · Rebel · Magician' : 'Hooks · Transcripts · Ideas';
+  await wait(600);
+  rail.classList.remove('show');
+  renderPosts(isDJ ? DJ_POSTS : MKT_POSTS);
+  btn.disabled = false;
+  await saveExtraPosts();
+  showToast('All creators scanned — team synced', 'mkt');
+}
+
+// ═══════════════════════════════════════════════
+// FILTERS
+// ═══════════════════════════════════════════════
+function renderFilters(){
+  const el = document.getElementById('filterRow');
+  const isDJ = stream === 'dj';
+  if(isDJ){
+    el.innerHTML = `
+      <div class="chip f-hero" onclick="doFilter('all',this)">All</div>
+      <div class="chip" onclick="doFilter('hero',this)">⚔ Hero</div>
+      <div class="chip" onclick="doFilter('rebel',this)">✖ Rebel</div>
+      <div class="chip" onclick="doFilter('magic',this)">✦ Magic</div>
+      <div class="chip" onclick="doFilter('visual',this)">Visual Hook</div>
+      <div class="chip" onclick="doFilter('top',this)">Top Performing</div>
+      <div class="chip" onclick="doFilter('crowd',this)">Crowd</div>
+      <div class="chip" onclick="doFilter('backstage',this)">Backstage</div>`;
+  } else {
+    el.innerHTML = `
+      <div class="chip f-mkt" onclick="doFilter('all',this)">All</div>
+      <div class="chip" onclick="doFilter('hooks',this)">Hook Frameworks</div>
+      <div class="chip" onclick="doFilter('viral',this)">Viral Patterns</div>
+      <div class="chip" onclick="doFilter('copy',this)">Caption Copy</div>
+      <div class="chip" onclick="doFilter('visual',this)">Visual Hooks</div>
+      <div class="chip" onclick="doFilter('top',this)">Top Performing</div>`;
+  }
+}
+
+function doFilter(f, el){
+  activeFilter = f;
+  document.querySelectorAll('.chip').forEach(c => { c.className = 'chip'; });
+  const isDJ = stream === 'dj';
+  if(f === 'hero') el.classList.add('f-hero');
+  else if(f === 'rebel') el.classList.add('f-rebel');
+  else if(isDJ) el.classList.add('f-hero');
+  else el.classList.add('f-mkt');
+  const pool = isDJ ? DJ_POSTS : MKT_POSTS;
+  let filtered;
+  if(f === 'all') filtered = pool;
+  else if(f === 'visual') filtered = pool.filter(p => p.visual);
+  else if(f === 'top') filtered = pool.filter(p => p.score >= 95);
+  else if(['hero','rebel','magic'].includes(f)) filtered = pool.filter(p => p.arch === f);
+  else filtered = pool.filter(p => p.category === f || p.tags.includes(f));
+  renderPosts(filtered);
+}
+
+// ═══════════════════════════════════════════════
+// RENDER POSTS
+// ═══════════════════════════════════════════════
+function renderPosts(list){
+  const el = document.getElementById('postList');
+  document.getElementById('feedCount').textContent = list.length + ' posts';
+  if(!list.length){
+    el.innerHTML = `<div class="empty-state"><div class="es-glyph">⬡</div><div class="es-msg">No posts match this filter</div></div>`;
+    return;
+  }
+  const isDJ = stream === 'dj';
+  el.innerHTML = list.map(p => {
+    const hb = p.arch==='hero'?'hb-hero':p.arch==='rebel'?'hb-rebel':p.arch==='magic'?'hb-magic':'hb-mkt';
+    const selCls = selectedPost?.id===p.id ? (isDJ?'sel-dj':'sel-mkt') : '';
+    const safeHook = p.hook.replace(/\\/g,'\\\\').replace(/'/g,"\\'").replace(/`/g,'\\`');
+    return `
+    <div class="post-card ${selCls}" id="pc${p.id}" onclick="selectPost(${p.id})">
+      <div class="card-top">
+        <span class="plat p-${p.platform}">${p.platform.toUpperCase()}</span>
+        <span class="card-handle">${p.creator}</span>
+        <span class="card-views ${isDJ?'views-dj':'views-mkt'}">${p.views}</span>
+      </div>
+      <div class="hook-bar ${hb}">
+        <span class="hook-text">${p.hook}</span>
+        <button class="copy-btn ${isDJ?'dj-c':'mkt-c'}" onclick="event.stopPropagation();copyBtn(this,'${safeHook}')">COPY</button>
+      </div>
+      <div class="card-body">${p.body}</div>
+      ${p.idea ? `<div class="card-idea">↳ ${p.idea}</div>` : ''}
+      <div class="card-tags">
+        ${p.visual?'<span class="ctag ct-vis">✦ visual</span>':''}
+        ${p.score>=95?`<span class="ctag ${isDJ?'ct-hero':'ct-mkt'}">top</span>`:''}
+        ${p.arch&&p.arch!=='mkt'?`<span class="ctag ct-${p.arch}">${p.arch}</span>`:''}
+        ${p.tags.slice(0,2).map(t=>`<span class="ctag">${t}</span>`).join('')}
+      </div>
+      <div class="card-foot">
+        <span class="cstat">♥ ${p.likes}</span>
+        <span class="cstat">↗ ${p.shares}</span>
+        <span class="cscore ${isDJ?'score-dj':'score-mkt'}">⬡ ${p.score}</span>
+        <button class="analyze-cta ${isDJ?'ac-dj':'ac-mkt'}" onclick="event.stopPropagation();analyzePost(${p.id})">ANALYZE →</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ═══════════════════════════════════════════════
+// SELECT + ANALYZE
+// ═══════════════════════════════════════════════
+function selectPost(id){
+  const all = [...DJ_POSTS, ...MKT_POSTS];
+  selectedPost = all.find(p => p.id === id);
+  document.querySelectorAll('.post-card').forEach(c => c.classList.remove('sel-dj','sel-mkt'));
+  document.getElementById('pc'+id)?.classList.add(stream==='dj' ? 'sel-dj' : 'sel-mkt');
+  analyzePost(id);
+  agentTab('analyze', document.querySelectorAll('.atab')[0]);
+}
+
+async function analyzePost(id){
+  const all = [...DJ_POSTS, ...MKT_POSTS];
+  const post = all.find(p => p.id === id);
+  if(!post) return;
+  selectedPost = post;
+  document.getElementById('noSel').style.display = 'none';
+  const out = document.getElementById('analysisOut');
+  out.style.display = 'block';
+  const isDJ = post.stream === 'dj';
+  out.innerHTML = `<div class="thinking ${isDJ?'t-dj':'t-mkt'}">Analyzing<div class="dots ${isDJ?'d-dj':'d-mkt'}"><span></span><span></span><span></span></div></div>`;
+
+  const pillars = [...document.querySelectorAll('#djPillars .pill[class*="on-"]')].map(p=>p.textContent);
+  const energy  = [...document.querySelectorAll('#djEnergy .pill[class*="on-"]')].map(p=>p.textContent);
+  const mktFocus= [...document.querySelectorAll('#mktFocus .pill.on-mkt')].map(p=>p.textContent);
+
+  const sys = `You are a social media hook strategist for BLOND:ISH — a DJ/artist whose mission is "1 billion people living their best life through music." Her brand archetype is 70% Hero, 20% Rebel, 10% Magician. Return ONLY compact valid JSON, no markdown, no preamble.`;
+
+  const prompt = isDJ
+    ? `Analyze this hook for BLOND:ISH. Return JSON with these exact fields:
+{"mechanism":"2 sentences why this works psychologically","archetypeEnergy":"which of Hero/Rebel/Magician this activates and why for a DJ","scores":{"hero_resonance":0,"rebel_edge":0,"visual_impact":0,"scroll_stop":0},"visualScene":"exact no-text visual opening she could film: camera angle, subject, lighting, duration, sound","adaptations":["Adaptation 1 for live set content","Adaptation 2 for backstage/raw content","Adaptation 3 visual-only — zero words on screen"],"captionAngle":"one-line caption strategy"}
+Post: ${post.platform}, ${post.creator}, ${post.views}
+Hook: "${post.hook}"
+Context: ${post.body}
+Arch: ${post.arch}, score: ${post.score}
+Her pillars: ${pillars.join(', ')}
+Her energy: ${energy.join(', ')}`
+    : `Analyze this marketing hook for BLOND:ISH's DJ brand. Return JSON:
+{"framework":"marketing technique being used (2 sentences)","djApplication":"how to apply this specifically to a DJ/artist brand — very concrete","scores":{"hook_strength":0,"dj_applicability":0,"caption_potential":0,"viral_probability":0},"captionTemplates":["Caption template 1 for Hero DJ content","Caption template 2 for Rebel/raw content","Caption template 3 for visual-first post"],"transcriptInsight":"key insight from transcript applied to DJ content strategy"}
+Post: ${post.platform}, ${post.creator}, ${post.views}
+Hook: "${post.hook}"
+Context: ${post.body}
+Transcript: "${post.transcript||''}"
+Existing idea: "${post.idea||''}"
+Her focus: ${mktFocus.join(', ')}`;
+
+  try {
+    const raw = await callClaude(sys, prompt);
+    let a;
+    try { a = JSON.parse(raw.replace(/```json|```/g,'').trim()); } catch { a = {}; }
+    isDJ ? renderDJAnalysis(post, a) : renderMKTAnalysis(post, a);
+    if(post.score >= 90 && !savedDJ.find(s=>s.id===post.id) && !savedMKT.find(s=>s.id===post.id)){
+      if(isDJ) savedDJ.push(post); else savedMKT.push(post);
+      renderLib();
+    }
+  } catch(err){
+    if(err.message === 'NO_KEY'){
+      out.innerHTML = `<div class="error-box">⚠ No API key. Paste your Anthropic key in the top-right field and hit SAVE, then try again.</div>`;
+    } else {
+      isDJ ? renderDJFallback(post) : renderMKTFallback(post);
+    }
+  }
+}
+
+function renderDJAnalysis(post, a){
+  const out = document.getElementById('analysisOut');
+  const sc = a.scores || {hero_resonance:85,rebel_edge:70,visual_impact:88,scroll_stop:90};
+  const adpts = a.adaptations || [];
+  out.innerHTML = `
+    <div class="ablock ${post.arch==='hero'?'hero-b':post.arch==='rebel'?'rebel-b':'magic-b'}">
+      <div class="alabel al-${post.arch==='hero'?'hero':post.arch==='rebel'?'rebel':'magic'}">${post.arch.toUpperCase()} MECHANISM</div>
+      <div class="atext">${a.mechanism||'Visual pattern interrupt — silence before the surge.'}</div>
+    </div>
+    <div class="ablock"><div class="alabel al-base">Archetype Energy</div><div class="atext">${a.archetypeEnergy||'Activates Hero — the viewer senses the cost behind the moment.'}</div></div>
+    <div class="ablock"><div class="alabel al-base">Scores</div>
+      ${Object.entries(sc).map(([k,v])=>`<div class="score-line"><span class="score-name">${k.replace(/_/g,' ')}</span><div class="sbar"><div class="sfill" style="width:${v}%;background:${v>=88?'var(--hero)':v>=72?'var(--rebel)':'var(--magic)'}"></div></div><span class="snum" style="color:${v>=88?'var(--hero)':v>=72?'var(--rebel)':'var(--magic)'}">${v}</span></div>`).join('')}
+    </div>
+    ${a.visualScene?`<div class="ablock rebel-b"><div class="alabel al-rebel">Visual Opening — No Text</div><div class="atext">${a.visualScene}</div></div>`:''}
+    ${adpts.length?`<div class="ablock"><div class="alabel al-base">Your Adaptations</div>${adpts.map(x=>`<div class="adapt-row"><div class="adapt-text">${x}</div><button class="copy-btn dj-c" onclick="copyBtn(this,\`${x.replace(/`/g,'\\`')}\`)">COPY</button></div>`).join('')}</div>`:''}
+    ${a.captionAngle?`<div class="ablock"><div class="alabel al-base">Caption Angle</div><div class="adapt-row"><div class="adapt-text">${a.captionAngle}</div><button class="copy-btn dj-c" onclick="copyBtn(this,\`${(a.captionAngle||'').replace(/`/g,'\\`')}\`)">COPY</button></div></div>`:''}
+    <button class="save-btn save-dj-btn" onclick="savePost(${post.id},'dj')">+ SAVE TO DJ LIBRARY</button>`;
+}
+
+function renderMKTAnalysis(post, a){
+  const out = document.getElementById('analysisOut');
+  const sc = a.scores || {hook_strength:88,dj_applicability:82,caption_potential:85,viral_probability:79};
+  const caps = a.captionTemplates || [];
+  out.innerHTML = `
+    <div class="ablock mkt-b"><div class="alabel al-mkt">Marketing Framework</div><div class="atext">${a.framework||'Curiosity gap + authority signal.'}</div></div>
+    <div class="ablock hero-b"><div class="alabel al-hero">Applied to Your DJ Brand</div><div class="atext">${a.djApplication||'Use for festival booking announcements.'}</div></div>
+    <div class="ablock"><div class="alabel al-base">Scores</div>
+      ${Object.entries(sc).map(([k,v])=>`<div class="score-line"><span class="score-name">${k.replace(/_/g,' ')}</span><div class="sbar"><div class="sfill" style="width:${v}%;background:var(--mktg)"></div></div><span class="snum" style="color:var(--mktg)">${v}</span></div>`).join('')}
+    </div>
+    ${caps.length?`<div class="ablock"><div class="alabel al-base">Caption Templates</div>${caps.map(x=>`<div class="adapt-row"><div class="adapt-text">${x}</div><button class="copy-btn mkt-c" onclick="copyBtn(this,\`${x.replace(/`/g,'\\`')}\`)">COPY</button></div>`).join('')}</div>`:''}
+    ${a.transcriptInsight?`<div class="ablock mkt-b"><div class="alabel al-mkt">Transcript Insight</div><div class="atext">${a.transcriptInsight}</div></div>`:''}
+    <button class="save-btn save-mkt-btn" onclick="savePost(${post.id},'mkt')">+ SAVE TO MARKETING LIBRARY</button>`;
+}
+
+function renderDJFallback(post){
+  const out = document.getElementById('analysisOut');
+  out.innerHTML = `
+    <div class="ablock ${post.arch==='rebel'?'rebel-b':'hero-b'}"><div class="alabel al-${post.arch==='rebel'?'rebel':'hero'}">${post.arch.toUpperCase()} HOOK</div>
+    <div class="atext">${post.arch==='rebel'?'Rebel: raw defiance as the hook. The contrast with overly produced content IS the pattern interrupt.':'Hero: the journey in a single frame. The crowd or moment proves the story without words.'}</div></div>
+    <div class="ablock"><div class="alabel al-base">BLOND:ISH Adaptations</div>
+      <div class="adapt-row"><div class="adapt-text">Nobody sees this part of being a DJ...</div><button class="copy-btn dj-c" onclick="copyBtn(this,'Nobody sees this part of being a DJ...')">COPY</button></div>
+      <div class="adapt-row"><div class="adapt-text">[ Open on hands on decks — dark room, no face, no text, ambient sound only ]</div><button class="copy-btn dj-c" onclick="copyBtn(this,'[ Open on hands on decks — dark room, no face, no text, ambient sound only ]')">COPY</button></div>
+      <div class="adapt-row"><div class="adapt-text">The industry told me to change. I said no.</div><button class="copy-btn dj-c" onclick="copyBtn(this,'The industry told me to change. I said no.')">COPY</button></div>
+    </div>
+    <button class="save-btn save-dj-btn" onclick="savePost(${post.id},'dj')">+ SAVE TO DJ LIBRARY</button>`;
+}
+
+function renderMKTFallback(post){
+  const out = document.getElementById('analysisOut');
+  out.innerHTML = `
+    <div class="ablock mkt-b"><div class="alabel al-mkt">Framework Detected</div><div class="atext">Curiosity gap + loss aversion. Positions speaker as insider with information the viewer is missing.</div></div>
+    <div class="ablock hero-b"><div class="alabel al-hero">Applied to BLOND:ISH</div><div class="atext">"Nobody tells you what it actually takes to headline [city/festival]." Pairs perfectly with backstage or load-in content.</div></div>
+    <div class="ablock"><div class="alabel al-base">Caption Templates</div>
+      <div class="adapt-row"><div class="adapt-text">Nobody tells you this about getting booked at festivals...</div><button class="copy-btn mkt-c" onclick="copyBtn(this,'Nobody tells you this about getting booked at festivals...')">COPY</button></div>
+      <div class="adapt-row"><div class="adapt-text">The part of touring they never show you.</div><button class="copy-btn mkt-c" onclick="copyBtn(this,'The part of touring they never show you.')">COPY</button></div>
+      <div class="adapt-row"><div class="adapt-text">1 billion people living their best life. That's the only metric I care about.</div><button class="copy-btn mkt-c" onclick="copyBtn(this,'1 billion people living their best life. That\\'s the only metric I care about.')">COPY</button></div>
+    </div>
+    <button class="save-btn save-mkt-btn" onclick="savePost(${post.id},'mkt')">+ SAVE TO MARKETING LIBRARY</button>`;
+}
+
+// ═══════════════════════════════════════════════
+// AGENT SCAN — LIVE CLAUDE CALL
+// ═══════════════════════════════════════════════
+async function runScan(type){
+  const isDJ = type === 'dj';
+  const btn = document.getElementById(isDJ ? 'runDJ' : 'runMKT');
+  const outDiv = document.getElementById(isDJ ? 'djScanOut' : 'mktScanOut');
+  const streamEl = document.getElementById(isDJ ? 'djStreamTxt' : 'mktStreamTxt');
+  btn.disabled = true;
+  btn.innerHTML = `<span class="dots ${isDJ?'d-dj':'d-mkt'}"><span></span><span></span><span></span></span>`;
+  outDiv.classList.add('open');
+  streamEl.textContent = '';
+
+  const pillars = [...document.querySelectorAll('#djPillars .pill[class*="on-"]')].map(p=>p.textContent);
+  const energy  = [...document.querySelectorAll('#djEnergy .pill[class*="on-"]')].map(p=>p.textContent);
+  const mktF    = [...document.querySelectorAll('#mktFocus .pill.on-mkt')].map(p=>p.textContent);
+
+  const topDJ  = DJ_POSTS.sort((a,b)=>b.score-a.score).slice(0,5).map(p=>`"${p.hook}" [${p.arch},${p.score}]`).join('\n');
+  const topMKT = MKT_POSTS.sort((a,b)=>b.score-a.score).slice(0,5).map(p=>`"${p.hook}" → "${p.idea}"`).join('\n');
+
+  const sys = `You are a social media strategist for BLOND:ISH — DJ/artist, mission: "1 billion people living their best life." Archetype: 70% Hero, 20% Rebel, 10% Magician. Be direct, specific, tactical.`;
+
+  const prompt = isDJ
+    ? `Top DJ hooks found:\n${topDJ}\n\nMy content pillars: ${pillars.join(', ')}\nMy hook energy: ${energy.join(', ')}\n\nGive me:\n1. PATTERN (2-3 sentences): What's working for DJ creators right now?\n2. THREE VISUAL HOOKS — no text on screen, each labeled HERO / REBEL / MAGICIAN. Camera angle, subject, lighting, duration, first sound.\n3. CAPTION BANK (6 ready-to-post captions): 2 Hero, 2 Rebel, 2 Magician.\n4. SCROLL-STOPPER FRAMEWORK: One repeatable formula for my next 5 posts.\n\nNo fluff. No preamble.`
+    : `Top marketing hooks:\n${topMKT}\n\nMy marketing focus: ${mktF.join(', ')}\n\nGive me:\n1. FRAMEWORK SYNTHESIS (2-3 sentences): What marketing pattern is working?\n2. THREE CAPTION FRAMEWORKS for BLOND:ISH — one per archetype (Hero/Rebel/Magician). Show the template + a filled example.\n3. TRANSCRIPT GOLD: 3 key insights from guru content that directly apply to DJ/artist social strategy.\n4. CAPTION BANK SEEDS: 8 short captions ready to adapt and post as BLOND:ISH.\n\nSpecific. Tactical.`;
+
+  try {
+    const text = await callClaude(sys, prompt, 1200);
+    // Simulate streaming character by character
+    for(let i = 0; i < text.length; i += 4){
+      streamEl.textContent += text.slice(i, i+4);
+      if(i % 40 === 0) await wait(6);
+    }
+  } catch(err){
+    if(err.message === 'NO_KEY'){
+      streamEl.textContent = '⚠ No API key set. Paste your Anthropic key in the top-right field and hit SAVE.';
+    } else {
+      streamEl.textContent = isDJ
+        ? `PATTERN\nTop DJ content opens with 3-5s of pure visual — stage, craft, or crowd — before any verbal hook. Silence + motion is the pattern interrupt. Rebel posts (no polish, direct camera) are outperforming produced content 3:1 on saves.\n\nVISUAL HOOKS\n⚔ HERO — Slow pan: empty stage 5am → 50,000 people midnight. Time-lapse. No narration.\n✖ REBEL — Handheld shaky cam backstage. Fluorescent lights. Walking to stage, looking straight ahead. No music yet.\n✦ MAGICIAN — Close-up CDJ screen showing track name + BPM. Finger hits play. Cut to crowd erupting. No face shown.\n\nCAPTION BANK\nHero: "Three years to get this moment."\nHero: "Nobody in that crowd knows what it took."\nRebel: "They told me to play it safe. I don't know how."\nRebel: "The underground never died. You just stopped looking."\nMagician: "Every set starts in silence."\nMagician: "ABRACADABRA isn't a label. It's a spell."\n\nFRAMEWORK\nOpen: SILENCE + CRAFT (3-5s, no text) → REVEAL: scale or emotion → TEXT OR NONE. Let the visual be the entire hook.`
+        : `FRAMEWORK SYNTHESIS\nTop creators front-load value with zero warm-up and drop the viewer mid-action. "Nobody tells you this" + loss aversion is the dominant pattern. Specificity (numbers, places, names) separates average from viral.\n\nCAPTION FRAMEWORKS\n⚔ HERO: "[Outcome] before [obstacle]. Here's what actually happened."\nExample: "Sold out 3 countries before anyone believed in the sound."\n✖ REBEL: "They said [mainstream thing]. [Your contrarian truth]."\nExample: "They said streaming killed DJs. We just sold 10,000 tickets."\n✦ MAGICIAN: "[Sensory detail that places viewer in the room]."\nExample: "The moment the bass drops and 5,000 people move as one."\n\nTRANSCRIPT GOLD\n1. Optimize for saves, not likes. Saves = intent = future buyer.\n2. Drop the viewer into value at frame 1. Zero warm-up.\n3. Your first 2 seconds = the ad for your content. Treat it like a paid placement.\n\nCAPTION SEEDS\n"The part of the job nobody films." | "Before the lights come on." | "This city has no idea what's coming." | "Three years of no's to get to this yes." | "Every set starts in silence." | "The underground doesn't need your validation." | "I don't make music for algorithms. That's why it works." | "1 billion people living their best life. That's the only metric I care about."`;
+    }
+  }
+  btn.disabled = false;
+  btn.innerHTML = isDJ ? '⟳ RUN DJ SCAN' : '⟳ RUN MARKETING SCAN';
+}
+
+// ═══════════════════════════════════════════════
+// LIBRARY
+// ═══════════════════════════════════════════════
+function savePost(id, type){
+  const all = [...DJ_POSTS, ...MKT_POSTS];
+  const post = all.find(p => p.id === id);
+  if(!post) return;
+  if(type==='dj'&&!savedDJ.find(s=>s.id===id)){savedDJ.push(post);storageSave('hi_saved_dj',savedDJ);}
+  if(type==='mkt'&&!savedMKT.find(s=>s.id===id)){savedMKT.push(post);storageSave('hi_saved_mkt',savedMKT);}
+  renderLib();
+  showToast('Saved — team synced', type==='dj'?'dj':'mkt');
+}
+function renderLib(){
+  const djEl = document.getElementById('libDJ');
+  const mktEl = document.getElementById('libMKT');
+  djEl.innerHTML = savedDJ.length ? savedDJ.map(p=>`
+    <div class="lib-item">
+      <div class="li-row"><span class="li-text">${p.hook}</span><button class="copy-btn dj-c" onclick="copyBtn(this,\`${p.hook.replace(/`/g,'\\`')}\`)">COPY</button></div>
+      <div class="li-meta">${p.visual?'<span class="ctag ct-vis">visual</span>':''}<span class="ctag ct-${p.arch}">${p.arch}</span><span class="li-score" style="color:var(--hero)">⬡${p.score}</span><span class="li-src">${p.creator}·${p.views}</span></div>
+    </div>`).join('') : '<div style="font-size:10px;color:var(--muted);text-align:center;padding:20px;font-family:var(--mono)">Save DJ hooks here</div>';
+  mktEl.innerHTML = savedMKT.length ? savedMKT.map(p=>`
+    <div class="lib-item">
+      <div class="li-row"><span class="li-text">${p.hook}</span><button class="copy-btn mkt-c" onclick="copyBtn(this,\`${p.hook.replace(/`/g,'\\`')}\`)">COPY</button></div>
+      ${p.idea?`<div style="font-size:10px;color:var(--mktg);margin:3px 0 5px">↳ ${p.idea}</div>`:''}
+      <div class="li-meta"><span class="ctag ct-mkt">mktg</span><span class="li-score" style="color:var(--mktg)">⬡${p.score}</span><span class="li-src">${p.creator}·${p.views}</span></div>
+    </div>`).join('') : '<div style="font-size:10px;color:var(--muted);text-align:center;padding:20px;font-family:var(--mono)">Save marketing ideas here</div>';
+}
+function libSwitch(t){
+  document.getElementById('ltDJ').className = 'lib-tab ' + (t==='dj'?'lt-dj':'');
+  document.getElementById('ltMKT').className = 'lib-tab ' + (t==='mkt'?'lt-mkt':'');
+  document.getElementById('libDJ').style.display = t==='dj' ? 'block' : 'none';
+  document.getElementById('libMKT').style.display = t==='mkt' ? 'block' : 'none';
+}
+
+// ═══════════════════════════════════════════════
+// AGENT TABS
+// ═══════════════════════════════════════════════
+function agentTab(name, el){
+  activeAgentTab = name;
+  document.querySelectorAll('.atab').forEach(t => t.classList.remove('at-dj','at-mkt'));
+  if(el) el.classList.add(stream==='dj' ? 'at-dj' : 'at-mkt');
+  document.querySelectorAll('[id^=tab-]').forEach(t => t.style.display = 'none');
+  document.getElementById('tab-'+name).style.display = 'block';
+}
+
+// ═══════════════════════════════════════════════
+// UTILS
+// ═══════════════════════════════════════════════
+function togglePill(el, arch){
+  const classes = ['on-hero','on-rebel','on-magic'];
+  const hasAny = classes.some(c => el.classList.contains(c));
+  classes.forEach(c => el.classList.remove(c));
+  if(!hasAny) el.classList.add('on-'+arch);
+}
+function toggleMktPill(el){ el.classList.toggle('on-mkt'); }
+
+async function copyBtn(btn, text){
+  try {
+    await navigator.clipboard.writeText(text);
+    const orig = btn.textContent;
+    btn.textContent = '✓';
+    btn.classList.add('done');
+    showToast('Copied','mkt');
+    setTimeout(() => { btn.textContent = orig; btn.classList.remove('done'); }, 1800);
+  } catch {
+    showToast('Tap to copy','dj');
+  }
+}
+
+function showToast(msg, type){
+  const t = document.getElementById('toast');
+  t.textContent = msg + ' ✓';
+  t.className = 'toast';
+  t.classList.add(type==='dj' ? 'show-dj' : 'show-mkt');
+  setTimeout(() => t.className = 'toast', 2000);
+}
+
+function wait(ms){ return new Promise(r => setTimeout(r, ms)); }
+
+// ═══════════════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════════════
+async function init(){
+  document.getElementById('postList').innerHTML='<div class="empty-state"><div class="es-glyph" style="font-size:24px">⬡</div><div class="es-msg">Loading shared data...</div></div>';
+  await loadSharedData();
+  const sb=document.getElementById('syncBadge'); if(sb){sb.style.display='inline';sb.style.color='var(--mktg)';}
+  renderDJList();
+  renderMKTList();
+  renderFilters();
+  renderPosts(DJ_POSTS);
+  renderLib();
+  loadKey();
+  // sync sidebar display
+  document.getElementById('djBody').style.flexDirection = 'column';
+  document.getElementById('mktBody').style.flexDirection = 'column';
+}
+// Wait for DOM before running
+if(document.readyState === 'loading'){
+  document.addEventListener('DOMContentLoaded', init);
+} else {
+  init();
+}
+</script>
+</body>
+</html>
